@@ -102,3 +102,5 @@ logs/
 db.sqlite3
 
 *.zip
+
+db/data/
