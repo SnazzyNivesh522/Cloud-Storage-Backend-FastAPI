@@ -1,0 +1,7 @@
+fastapi[all]
+passlib
+python-jose
+fastapi-mail
+sqlmodel
+sqlalchemy
+psycopg2-binary
