@@ -1,3 +1,4 @@
+import shutil
 from fastapi import APIRouter, HTTPException, status, Depends
 from fastapi import UploadFile
 
@@ -15,12 +16,17 @@ from sqlalchemy.orm import Session
 from uuid import UUID
 
 import os
+from datetime import datetime, timedelta
+
 router=APIRouter(
     prefix="/files",
     tags=["files"],
     responses={404: {"description": "Not found"}},
 )
 UPLOAD_FOLDER="./UPLOADS"
+TRASH_FOLDER = "TRASH"
+TRASH_RETENTION_MINUTES = 30
+
 @router.get("/")
 async def get_user_files(db:Session=Depends(get_session),user:User=Depends(get_current_user)):    
     files=db.query(FileMetadata).filter(FileMetadata.user_id==user.uid).all()
@@ -74,10 +80,11 @@ async def delete_file(file_id:UUID,db:Session=Depends(get_session),user:User=Dep
     file=db.query(FileMetadata).filter(FileMetadata.file_id==file_id).first()
     if not file:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND,detail="File not found")
-    os.remove(file.storage_location)
-    db.delete(file)
+    file.is_trashed = True
+    file.trashed_at = datetime.utcnow()
     db.commit()
-    return {"message":"File deleted successfully"}
+    return {"message":"File moved to trash successfully"}
+
 @router.put("/move/{file_id}")
 async def move_file(file_id:UUID,folder_id:UUID,db:Session=Depends(get_session),user:User=Depends(get_current_user)):
     file=db.query(FileMetadata).filter(FileMetadata.file_id==file_id).first()
@@ -97,30 +104,37 @@ async def download_file(file_id:UUID,db:Session=Depends(get_session),user:User=D
     if not file:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND,detail="File not found")
     return FileResponse(file.storage_location,filename=file.file_name)
-# @router.delete("/{file_id}")
-# async def delete_file(file_id:str,db:Session=Depends(get_session),user:User=Depends(get_current_user)):
-#     file=db.query(FileMetadata).filter(FileMetadata.file_id==file_id).first()
-#     if not file:
-#         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND,detail="File not found")
-#     db.delete(file)
-#     db.commit()
-#     return {"message":"File deleted successfully"}
 
-# @router.put("/{file_id}")
-# async def update_file(file_id:str,file_name:str,db:Session=Depends(get_session),user:User=Depends(get_current_user)):
-#     file=db.query(FileMetadata).filter(FileMetadata.file_id==file_id).first()
-#     if not file:
-#         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND,detail="File not found")
-#     file.file_name=file_name
-#     db.commit()
-#     return file
+@router.get("/trash/cleanup")
+async def cleanup_trash(db:Session=Depends(get_session)):
+    expiration_time = datetime.utcnow() - timedelta(minutes=TRASH_RETENTION_MINUTES)
+    trashed_files = db.query(FileMetadata).filter(FileMetadata.is_trashed == True, FileMetadata.trashed_at < expiration_time).all()
+    for file in trashed_files:
+        db.delete(file)
+    db.commit()
+    return {"message": "Trash cleaned up successfully"}
 
-# @router.get("/download/{file_id}")
-# async def download_file(file_id:str,db:Session=Depends(get_session),user:User=Depends(get_current_user)):
-#     file=db.query(FileMetadata).filter(FileMetadata.file_id==file_id).first()
-#     if not file:
-#         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND,detail="File not found")
-#     return FileResponse(file.file_path,filename=file.file_name)
-
-
+#empty trash
+@router.delete("/trash/empty")
+async def empty_trash(db:Session=Depends(get_session),user:User=Depends(get_current_user)):
+    folders=db.query(Folder).filter(Folder.user_id==user.uid).filter(Folder.is_trashed==True).all()
+    files=db.query(FileMetadata).filter(FileMetadata.user_id==user.uid).filter(FileMetadata.is_trashed==True).all()
+    if not folders and not files:
+        return {"message":"Trash is already empty"}
+    
+    for file in files:
+        os.remove(file.storage_location)
+        db.delete(file)
+        db.commit()
+        
+    for folder in folders:
+        try:
+            from scripts.delete_folder_recursive import delete_folder_recursive
+            delete_folder_recursive(f"{UPLOAD_FOLDER}/{user.uid}",folder.folder_id)
+        except FileNotFoundError:
+            pass
+        db.delete(folder)
+        db.commit()
+            
+    return {"message":"Trash emptied successfully"}
 

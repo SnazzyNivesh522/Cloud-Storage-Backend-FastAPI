@@ -37,6 +37,8 @@ class FileMetadata(SQLModel, table=True):
     storage_location: str = Field(nullable=False)
     uploaded_at: datetime = Field(default_factory=datetime.utcnow, nullable=False)
     updated_at: datetime = Field(default_factory=datetime.utcnow, nullable=False)
+    is_trashed: bool = Field(default=False, nullable=False)
+    trashed_at: datetime = Field(default=None, nullable=True)
 
     user: "User" = Relationship(
         back_populates="files", sa_relationship_kwargs={"lazy": "selectin"}
@@ -83,6 +85,8 @@ class Folder(SQLModel, table=True):
     parent_folder: uuid.UUID = Field(default=None,nullable=True)
     created_at: datetime = Field(default_factory=datetime.utcnow, nullable=False)
     updated_at: datetime = Field(default_factory=datetime.utcnow, nullable=False)
+    is_trashed: bool = Field(default=False, nullable=False)
+    trashed_at: datetime = Field(default=None, nullable=True)
 
     user: "User" = Relationship(
         back_populates="folders", sa_relationship_kwargs={"lazy": "selectin"}
