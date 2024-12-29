@@ -2,7 +2,7 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
 
-from routers import auth
+from routers import auth,file,folder,user
 
 from database import create_db_and_tables
 
@@ -19,6 +19,9 @@ def create_app():
         openapi_prefix="/api"
     )
     app.include_router(auth.router)
+    app.include_router(file.router)
+    app.include_router(folder.router)
+    app.include_router(user.router)
     
     app.add_middleware(
         CORSMiddleware,
