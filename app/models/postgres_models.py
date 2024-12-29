@@ -7,9 +7,11 @@ class User(SQLModel, table=True):
     uid: uuid.UUID = Field(default_factory=uuid.uuid4, primary_key=True)
     username: str = Field(max_length=50, nullable=False)
     email: str = Field(max_length=320, nullable=False)
+    profile_picture: bytes = Field(default=None, nullable=True)
     hashed_password: str
     is_verified: bool = Field(default=False)
     otp: str = Field(default=None, max_length=6,nullable=True)
+    
 
     files: list["FileMetadata"] = Relationship(
         back_populates="user", sa_relationship_kwargs={"lazy": "selectin"}
@@ -78,7 +80,7 @@ class Folder(SQLModel, table=True):
     folder_id: uuid.UUID = Field(default_factory=uuid.uuid4, primary_key=True)
     user_id: uuid.UUID = Field(foreign_key="user.uid", nullable=False, index=True)
     folder_name: str = Field(max_length=255, nullable=False)
-    parent_folder: uuid.UUID = Field(default=None)
+    parent_folder: uuid.UUID = Field(default=None,nullable=True)
     created_at: datetime = Field(default_factory=datetime.utcnow, nullable=False)
     updated_at: datetime = Field(default_factory=datetime.utcnow, nullable=False)
 
