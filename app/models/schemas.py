@@ -26,3 +26,8 @@ class FileCreate(BaseModel):
     file_size:int
     file_type:str
     file_path:str
+    
+class UserDetails(BaseModel):
+    email:EmailStr
+    username:str
+    profileImage:str | None=None
