@@ -20,7 +20,7 @@ router=APIRouter(
     tags=["files"],
     responses={404: {"description": "Not found"}},
 )
-UPLOAD_FOLDER="UPLOADS"
+UPLOAD_FOLDER="./UPLOADS"
 @router.get("/")
 async def get_user_files(db:Session=Depends(get_session),user:User=Depends(get_current_user)):    
     files=db.query(FileMetadata).filter(FileMetadata.user_id==user.uid).all()
@@ -41,6 +41,7 @@ async def upload_files(folder_id:UUID,files:list[UploadFile],db:Session=Depends(
     file_metadata_list=[]
     for file in files:
         file_path=f"{UPLOAD_FOLDER}/{user.uid}/{str(folder.folder_id)}/{file.filename}"
+        os.makedirs(os.path.dirname(file_path),exist_ok=True)
         with open(file_path,"wb") as f:
             f.write(await file.read())
         file_metadata=FileMetadata(
@@ -55,7 +56,8 @@ async def upload_files(folder_id:UUID,files:list[UploadFile],db:Session=Depends(
     
     db.add_all(file_metadata_list)
     db.commit()
-    db.refresh(file_metadata_list)
+    for file_metadata in file_metadata_list:
+        db.refresh(file_metadata)
     return {"files":file_metadata_list}
 @router.put("/rename/{file_id}")
 async def rename_file(file_id:UUID,file_name:str,db:Session=Depends(get_session),user:User=Depends(get_current_user)):
