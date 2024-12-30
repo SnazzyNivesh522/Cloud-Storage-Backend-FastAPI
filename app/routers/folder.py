@@ -40,6 +40,18 @@ async def get_trashed_folders(db:Session=Depends(get_session),user:User=Depends(
 
 @router.post("/",status_code=status.HTTP_201_CREATED)
 async def create_folder(folder_name:str,parent_folder:Optional[UUID]=None,db:Session=Depends(get_session),user:User=Depends(get_current_user)):
+    if folder_name=="/" and parent_folder==None:
+        root_folder=db.query(Folder).filter(Folder.folder_name=="/",Folder.user_id==user.uid).first()
+        if root_folder:
+            return {"folder_name":root_folder.folder_name,"folder_id":root_folder.folder_id,"message":"Root folder already exists"}
+        else:
+            root_folder=Folder(folder_name=folder_name,parent_folder=parent_folder,user_id=user.uid)
+            db.add(root_folder)
+            db.commit()
+            db.refresh(root_folder)
+            return {"folder_name":root_folder.folder_name,"folder_id":root_folder.folder_id,"message":"Root folder created successfully"}            
+    if parent_folder==None:
+        parent_folder=db.query(Folder).filter(Folder.folder_name=="/",Folder.user_id==user.uid).first().folder_id            
     folder=Folder(folder_name=folder_name,parent_folder=parent_folder,user_id=user.uid)
     db.add(folder)
     db.commit()
