@@ -35,8 +35,8 @@ class FileMetadata(SQLModel, table=True):
     file_size: int = Field(nullable=False)
     file_type: str = Field(max_length=50, nullable=False)
     storage_location: str = Field(nullable=False)
-    uploaded_at: datetime = Field(default_factory=datetime.utcnow, nullable=False)
-    updated_at: datetime = Field(default_factory=datetime.utcnow, nullable=False)
+    uploaded_at: datetime = Field(default_factory=datetime.now, nullable=False)
+    updated_at: datetime = Field(default_factory=datetime.now, nullable=False)
     is_trashed: bool = Field(default=False, nullable=False)
     trashed_at: datetime = Field(default=None, nullable=True)
 
@@ -48,7 +48,7 @@ class FileMetadata(SQLModel, table=True):
     )
 
     def update_timestamp(self):
-        self.updated_at = datetime.utcnow()
+        self.updated_at = datetime.now()
 
     def __repr__(self) -> str:
         return f"<FileMetadata(file_name={self.file_name})>"
@@ -61,7 +61,7 @@ class SharedFile(SQLModel, table=True):
     shared_with: uuid.UUID = Field(foreign_key="user.uid", nullable=False, index=True)
     shared_by: uuid.UUID = Field(foreign_key="user.uid", nullable=False, index=True)
     access_level: str = Field(max_length=20, nullable=False)
-    shared_at: datetime = Field(default_factory=datetime.utcnow, nullable=False)
+    shared_at: datetime = Field(default_factory=datetime.now, nullable=False)
 
     file: "FileMetadata" = Relationship(
         sa_relationship_kwargs={"lazy": "selectin"}
@@ -83,8 +83,8 @@ class Folder(SQLModel, table=True):
     user_id: uuid.UUID = Field(foreign_key="user.uid", nullable=False, index=True)
     folder_name: str = Field(max_length=255, nullable=False)
     parent_folder: uuid.UUID = Field(default=None,nullable=True)
-    created_at: datetime = Field(default_factory=datetime.utcnow, nullable=False)
-    updated_at: datetime = Field(default_factory=datetime.utcnow, nullable=False)
+    created_at: datetime = Field(default_factory=datetime.now, nullable=False)
+    updated_at: datetime = Field(default_factory=datetime.now, nullable=False)
     is_trashed: bool = Field(default=False, nullable=False)
     trashed_at: datetime = Field(default=None, nullable=True)
 
@@ -96,6 +96,6 @@ class Folder(SQLModel, table=True):
     )
 
     def update_timestamp(self):
-        self.updated_at = datetime.utcnow()
+        self.updated_at = datetime.now()
     def __repr__(self) -> str:
         return f"<Folder(folder_name={self.folder_name})>"
