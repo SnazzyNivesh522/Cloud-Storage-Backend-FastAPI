@@ -1,6 +1,5 @@
 from jose import jwt,JWTError
 from datetime import datetime, timedelta,timezone
-from fastapi import HTTPException,status
 from config import Config
 from models.schemas import TokenData
 

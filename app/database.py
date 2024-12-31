@@ -1,14 +1,3 @@
-from motor.motor_asyncio import AsyncIOMotorClient
-from config import Config
-
-
-client=AsyncIOMotorClient(Config.MONGO_URI)
-db=client[Config.DATABASE_NAME]
-
-users_collection=db["users"]
-files_collection=db["files"]
-shares_collection=db["shares"]
-
 from config import PostgresSQLConfig
 from sqlalchemy.orm import sessionmaker
 from sqlmodel import SQLModel,create_engine,Session

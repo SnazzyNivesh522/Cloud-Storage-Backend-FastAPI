@@ -1,5 +1,4 @@
-from typing import Annotated
-from fastapi import APIRouter, HTTPException, Request, status, Depends, Header
+from fastapi import APIRouter, HTTPException, Request, status, Depends
 from fastapi.security import OAuth2PasswordRequestForm
 
 from database import get_session
