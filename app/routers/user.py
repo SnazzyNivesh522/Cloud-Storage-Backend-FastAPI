@@ -1,4 +1,4 @@
-from fastapi import APIRouter, UploadFile, File, HTTPException, Depends
+from fastapi import APIRouter, Request, UploadFile, File, HTTPException, Depends
 
 from database import get_session
 
@@ -16,10 +16,12 @@ router = APIRouter(
 
 @router.post("/upload-profile-picture/")
 async def upload_profile_picture(
+    request: Request,
     file: UploadFile,
     db:Session=Depends(get_session),
-    user: User = Depends(get_current_user)
 ):
+    token = request.headers.get("Authorization").split(" ")[1]
+    user = await get_current_user(token, db)    
     user = db.query(User).filter(User.uid == user.uid).first()
     if not user:
         raise HTTPException(status_code=404, detail="User not found")
