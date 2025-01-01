@@ -92,7 +92,7 @@ async def create_folder(
     return folder
 
 
-@router.get("/")
+@router.get("/",response_model=list[FolderDetails])
 async def get_user_folders(
     request: Request,
     db: Session = Depends(get_session),
@@ -117,6 +117,36 @@ async def get_user_folders(
     )
     return folders
 
+@router.get("/root", response_model=FolderDetails)
+async def get_root_folder(
+    request: Request,
+    db: Session = Depends(get_session),
+):
+    """
+    Retrieves the root folder for the authenticated user.
+
+    Args:
+        request (Request): The HTTP request object.
+        db (Session): The database session dependency.
+
+    Returns:
+        Folder: The root folder for the authenticated user.
+
+    Raises:
+        HTTPException: If the root folder is not found.
+    """
+    token = request.headers.get("Authorization").split(" ")[1]
+    user = await get_current_user(token, db)
+    folder = (
+        db.query(Folder)
+        .filter(Folder.folder_name == "/", Folder.user_id == user.uid)
+        .first()
+    )
+    if not folder:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND, detail="Root folder not found"
+        )
+    return folder
 
 @router.get("/{folder_id}", response_model=FolderDetails)
 async def get_folder_detail(

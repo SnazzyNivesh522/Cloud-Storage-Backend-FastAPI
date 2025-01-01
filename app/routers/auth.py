@@ -3,7 +3,7 @@ from fastapi.security import OAuth2PasswordRequestForm
 
 from database import get_session
 from models.schemas import UserCreate, Token, EmailSchema, UserDetails
-from models.postgres_models import User
+from models.postgres_models import User,Folder
 from base64 import b64encode
 
 from utils.hashing import get_password_hash, verify_password
@@ -66,6 +66,12 @@ async def verify_otp(email: str, otp: str, db: Session = Depends(get_session)):
     user.is_verified = True
     user.otp = None
     db.commit()
+    
+    folder = Folder(folder_name="/", user_id=user.uid)
+    db.add(folder)
+    db.commit()
+    db.refresh(folder)  
+      
 
     email_payload = EmailSchema(email=email)
     email_response = await send_thank_you_email(email_payload)
@@ -75,7 +81,7 @@ async def verify_otp(email: str, otp: str, db: Session = Depends(get_session)):
             detail=f"Error sending email, code: {email_response.status_code}",
         )
 
-    return {"message": "Account verified successfully"}
+    return {"message": "Account verified successfully","root_folder_id":folder.folder_id,"updated_at":folder.updated_at}
 
 
 @router.post("/token")

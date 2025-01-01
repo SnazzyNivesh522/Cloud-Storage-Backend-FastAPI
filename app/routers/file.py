@@ -74,10 +74,9 @@ async def get_user_files(
             .all()
         )
     else:
-        # Return all non-trashed files for the user
         files = (
             db.query(FileMetadata)
-            .filter(FileMetadata.user_id == user.uid, FileMetadata.is_trashed == False)
+            .filter(FileMetadata.file_name=="/",FileMetadata.user_id == user.uid, FileMetadata.is_trashed == False)
             .all()
         )
     print("Files::", files)
